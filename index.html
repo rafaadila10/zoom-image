@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pinch Zoom Question Wizard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Zoom Lengkap Gambar Soal</title>
   <style>
     body {
+      font-family: sans-serif;
       margin: 0;
       padding: 0;
-      font-family: sans-serif;
     }
 
     .col-sm-7, .col-sm-5 {
@@ -42,21 +42,10 @@
       padding: 10px;
     }
 
-    #questionWizard {
-      transform: scale(1);
-      transform-origin: center center;
-      transition: transform 0.1s ease;
-      touch-action: none; /* penting agar gesture bisa diterapkan */
-      background: #fff;
-    }
-
     .question-body img {
       max-width: 100%;
       height: auto;
-    }
-
-    .question-answer table {
-      width: 100%;
+      cursor: zoom-in;
     }
 
     .question-answer-button {
@@ -76,102 +65,223 @@
     .btn:disabled {
       background-color: #ccc;
     }
+
+    /* Modal Gambar */
+    .img-modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.85);
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      flex-direction: column;
+      touch-action: none;
+    }
+
+    .img-modal.show {
+      display: flex;
+    }
+
+    .img-modal img {
+      max-width: 100%;
+      max-height: 100%;
+      transform-origin: center center;
+      transition: transform 0.1s ease;
+      user-select: none;
+      cursor: grab;
+      position: relative;
+    }
+
+    .img-modal .controls {
+      margin-top: 10px;
+    }
+
+    .img-modal button {
+      background: #fff;
+      color: #000;
+      padding: 8px 12px;
+      margin: 0 5px;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+
+    .img-modal::after {
+      content: "✕";
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 30px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
-<div class="col-sm-7 fu-example section">
-  <div class="box outheBoxShadow wizard" id="questionWizard">
-    <div class="box-header bg-white">
-      <div class="checkbox hints">
-        <label></label>
-        <span class="pull-right"><label></label></span>
-      </div>
-    </div>
-    <div class="steps-container">
-      <ul class="steps hidden" style="margin-left: 0">
-        <li data-step="1" class="complete"></li>
-        <li data-step="2" class="active"></li>
-      </ul>
-    </div>
-
-    <form id="answerForm" method="post">
-      <input type="hidden" name="junio_smart" value="token">
-      <div class="box-body step-content">
-        <div class="clearfix step-pane sample-pane active" id="2" data-questionid="4" data-step="2">
-          <div class="question-body">
-            <label class="lb-title">Pertanyaan 2 Dari 2</label>
-            <label class="lb-content">Apa jawaban yang benar dari gambar berikut?</label>
-            <label class="lb-mark">80 Nilai Ujian</label>
-            <img src="https://media.istockphoto.com/id/591992956/id/foto/panorama-pemandangan-gunung-rinjani-indonesia.jpg?s=612x612&w=0&k=20&c=1DpsfAej_6Z3J689e_QVNbmDJYFvFAfjBqgEM7V04gk=" alt="Contoh Gambar">
-          </div>
-          <div class="question-answer" id="step2">
-            <table class="table">
-              <tr>
-                <td>
-                  <input id="option16" value="16" name="answer[1][4][]" type="radio">
-                  <label for="option16">salah</label>
-                </td>
-                <td>
-                  <input id="option17" value="17" name="answer[1][4][]" type="radio">
-                  <label for="option17">benar</label>
-                </td>
-              </tr>
-            </table>
-          </div>
+<!-- Konten Utama -->
+<div class="col-sm-7">
+  <div class="box" id="questionWizard">
+    <div class="box-header">Soal Ujian</div>
+    <form>
+      <div class="box-body">
+        <div class="question-body">
+          <label class="lb-title">Pertanyaan:</label><br>
+          <label>Apa jawaban dari gambar berikut?</label><br><br>
+          <img id="questionImage" src="https://media.istockphoto.com/id/591992956/id/foto/panorama-pemandangan-gunung-rinjani-indonesia.jpg?s=612x612&w=0&k=20&c=1DpsfAej_6Z3J689e_QVNbmDJYFvFAfjBqgEM7V04gk=" alt="gambar soal">
         </div>
-
         <div class="question-answer-button">
-          <button class="btn" type="button" id="prevbutton"><i class="fa fa-angle-left"></i> Sebelumnya</button>
-          <button class="btn" type="button" id="nextbutton" disabled>Berikutnya <i class="fa fa-angle-right"></i></button>
-          <input type="submit" class="btn" name="finishedbutton" id="finishedbutton" value="Selesai">
+          <button class="btn">Sebelumnya</button>
+          <button class="btn" disabled>Berikutnya</button>
+          <input type="submit" class="btn" value="Selesai">
         </div>
       </div>
     </form>
   </div>
 </div>
 
-<div class="col-sm-5">
-  <!-- Samping kanan (bisa diisi status, timer, dll) -->
+<!-- Modal Zoom Gambar -->
+<div class="img-modal" id="imgModal">
+  <img id="modalImage" src="" alt="zoom gambar">
+  <div class="controls">
+    <button id="zoomIn">+</button>
+    <button id="zoomOut">-</button>
+    <button id="resetZoom">Reset</button>
+  </div>
 </div>
 
-<!-- Pinch Zoom Script -->
 <script>
-  const zoomContainer = document.getElementById('questionWizard');
-  let scale = 1;
-  const minScale = 0.5;
-  const maxScale = 2;
-  let initialDistance = null;
-  let initialScale = 1;
+  const thumbImg = document.getElementById('questionImage');
+  const imgModal = document.getElementById('imgModal');
+  const modalImage = document.getElementById('modalImage');
+  const zoomInBtn = document.getElementById('zoomIn');
+  const zoomOutBtn = document.getElementById('zoomOut');
+  const resetBtn = document.getElementById('resetZoom');
+
+  let scale = 1, minScale = 1, maxScale = 4;
+  let initialDistance = null, initialScale = 1;
+  let startX = 0, startY = 0, currentX = 0, currentY = 0, isDragging = false;
+  let lastTap = 0;
+
+  function updateTransform() {
+    modalImage.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
+  }
+
+  // Buka modal
+  thumbImg.addEventListener('click', () => {
+    modalImage.src = thumbImg.src;
+    resetTransform();
+    imgModal.classList.add('show');
+  });
+
+  // Tutup modal
+  imgModal.addEventListener('click', (e) => {
+    if (e.target === imgModal || e.target === modalImage) {
+      imgModal.classList.remove('show');
+    }
+  });
+
+  // Pinch gesture
+  modalImage.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      initialDistance = getDistance(e.touches);
+      initialScale = scale;
+    } else if (e.touches.length === 1) {
+      isDragging = true;
+      startX = e.touches[0].clientX - currentX;
+      startY = e.touches[0].clientY - currentY;
+
+      // Deteksi double tap
+      const currentTime = new Date().getTime();
+      if (currentTime - lastTap < 300) {
+        scale = scale === 1 ? 2 : 1;
+        currentX = 0;
+        currentY = 0;
+        updateTransform();
+      }
+      lastTap = currentTime;
+    }
+  });
+
+  modalImage.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && initialDistance) {
+      e.preventDefault();
+      const currentDistance = getDistance(e.touches);
+      scale = Math.min(maxScale, Math.max(minScale, initialScale * (currentDistance / initialDistance)));
+      updateTransform();
+    } else if (isDragging && e.touches.length === 1 && scale > 1) {
+      currentX = e.touches[0].clientX - startX;
+      currentY = e.touches[0].clientY - startY;
+      updateTransform();
+    }
+  });
+
+  modalImage.addEventListener('touchend', () => {
+    if (scale <= 1) {
+      currentX = 0;
+      currentY = 0;
+    }
+    isDragging = false;
+    initialDistance = null;
+  });
+
+  // Mouse drag
+  modalImage.addEventListener('mousedown', (e) => {
+    if (scale > 1) {
+      isDragging = true;
+      startX = e.clientX - currentX;
+      startY = e.clientY - currentY;
+      modalImage.style.cursor = 'grabbing';
+    }
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      currentX = e.clientX - startX;
+      currentY = e.clientY - startY;
+      updateTransform();
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+    modalImage.style.cursor = 'grab';
+  });
+
+  // Tombol zoom manual
+  zoomInBtn.addEventListener('click', () => {
+    if (scale < maxScale) scale += 0.2;
+    updateTransform();
+  });
+
+  zoomOutBtn.addEventListener('click', () => {
+    if (scale > minScale) scale -= 0.2;
+    if (scale <= 1) { currentX = 0; currentY = 0; }
+    updateTransform();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    resetTransform();
+  });
+
+  function resetTransform() {
+    scale = 1;
+    currentX = 0;
+    currentY = 0;
+    updateTransform();
+  }
 
   function getDistance(touches) {
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
     return Math.hypot(dx, dy);
   }
-
-  zoomContainer.addEventListener('touchstart', function (e) {
-    if (e.touches.length === 2) {
-      initialDistance = getDistance(e.touches);
-      initialScale = scale;
-    }
-  });
-
-  zoomContainer.addEventListener('touchmove', function (e) {
-    if (e.touches.length === 2 && initialDistance !== null) {
-      e.preventDefault();
-      const currentDistance = getDistance(e.touches);
-      const scaleChange = currentDistance / initialDistance;
-      scale = Math.min(Math.max(minScale, initialScale * scaleChange), maxScale);
-      zoomContainer.style.transform = `scale(${scale})`;
-    }
-  });
-
-  zoomContainer.addEventListener('touchend', function (e) {
-    if (e.touches.length < 2) {
-      initialDistance = null;
-    }
-  });
 </script>
 
 </body>
